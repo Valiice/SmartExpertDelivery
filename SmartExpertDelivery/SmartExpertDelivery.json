@@ -1,0 +1,10 @@
+{
+  "Name": "Smart Expert Delivery",
+  "InternalName": "SmartExpertDelivery",
+  "Author": "Vali",
+  "Punchline": "Expert delivery that keeps the gear you still need.",
+  "Description": "Adds a Deliver button to the Grand Company Expert Delivery window. It hands in your gear but keeps what a lower level job can still use, and optionally tomestone gear, melded gear and gear set pieces. Settings: /sed",
+  "ApplicableVersion": "any",
+  "RepoUrl": "https://github.com/Valiice/SmartExpertDelivery",
+  "Tags": ["grand company", "expert delivery", "seals", "gear"]
+}

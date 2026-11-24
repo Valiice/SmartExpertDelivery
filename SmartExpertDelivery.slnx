@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="SmartExpertDelivery.Core/SmartExpertDelivery.Core.csproj" />
+  <Project Path="SmartExpertDelivery.Tests/SmartExpertDelivery.Tests.csproj" />
+  <Project Path="SmartExpertDelivery/SmartExpertDelivery.csproj" />
+</Solution>
