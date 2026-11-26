@@ -22,7 +22,7 @@ public sealed class Plugin : IDalamudPlugin
         this.runner = new DeliveryRunner(config, new GearCatalog());
         this.mainWindow = new MainWindow(config, this.runner);
         this.windowSystem.AddWindow(this.mainWindow);
-        this.windowSystem.AddWindow(new DeliveryOverlay(this.runner, this.OpenMain));
+        this.windowSystem.AddWindow(new DeliveryOverlay(config, this.runner, this.OpenMain));
 
         // Dalamud never calls Dispose on a plugin whose ctor threw, so tear down ourselves.
         try

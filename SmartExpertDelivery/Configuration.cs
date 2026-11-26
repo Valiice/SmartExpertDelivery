@@ -10,6 +10,8 @@ public class Configuration : IPluginConfiguration
 
     public KeepOptions Keep { get; set; } = new();
 
+    public bool OverlayOnRight { get; set; }
+
     public static Configuration Load(IDalamudPluginInterface pluginInterface) =>
         pluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 

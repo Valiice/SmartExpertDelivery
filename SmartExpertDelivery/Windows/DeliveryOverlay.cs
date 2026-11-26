@@ -8,15 +8,17 @@ namespace SmartExpertDelivery.Windows;
 
 internal sealed class DeliveryOverlay : Window
 {
+    private readonly Configuration config;
     private readonly DeliveryRunner runner;
     private readonly Action openSettings;
-    private float height;
+    private Vector2 size;
 
-    public DeliveryOverlay(DeliveryRunner runner, Action openSettings)
+    public DeliveryOverlay(Configuration config, DeliveryRunner runner, Action openSettings)
         : base(
             "SmartExpertDelivery###SmartExpertDeliveryOverlay",
             ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoFocusOnAppearing)
     {
+        this.config = config;
         this.runner = runner;
         this.openSettings = openSettings;
         this.IsOpen = true;
@@ -29,7 +31,7 @@ internal sealed class DeliveryOverlay : Window
     public override void PreDraw()
     {
         if (SupplyList.IsOpen)
-            this.Position = SupplyList.Position - new Vector2(0, this.height);
+            this.Position = SupplyList.Position + new Vector2(this.config.OverlayOnRight ? SupplyList.Width - this.size.X : 0, -this.size.Y);
     }
 
     public override void Draw()
@@ -61,7 +63,7 @@ internal sealed class DeliveryOverlay : Window
         if (this.runner.Status.Length > 0)
             ImGui.TextUnformatted(this.runner.Status);
 
-        this.height = ImGui.GetWindowSize().Y;
+        this.size = ImGui.GetWindowSize();
     }
 
     private static void ListTooltip(IReadOnlyList<DeliveryItem> items, Func<DeliveryItem, string> line)

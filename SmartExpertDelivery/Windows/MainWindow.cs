@@ -39,6 +39,9 @@ internal sealed class MainWindow : Window
         this.Toggle("Keep gear that is part of a gear set", keep.Gearsets, v => keep.Gearsets = v, null);
 
         ImGui.Separator();
+        this.Toggle("Show the Deliver button on the right", this.config.OverlayOnRight, v => this.config.OverlayOnRight = v, "Moves it to the right corner of the Expert Delivery window, out of the way of other plugins' buttons.");
+
+        ImGui.Separator();
         if (!this.runner.Live)
             ImGui.TextUnformatted("Estimated from your inventory and armoury chest. The Expert Delivery window has the exact list.");
 

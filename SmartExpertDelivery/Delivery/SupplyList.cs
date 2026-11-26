@@ -39,6 +39,15 @@ internal static unsafe class SupplyList
         }
     }
 
+    public static float Width
+    {
+        get
+        {
+            var addon = Find(ListAddon);
+            return addon == null || addon->RootNode == null ? 0 : addon->RootNode->Width * addon->Scale;
+        }
+    }
+
     public static bool TryRead(List<SupplyEntry> entries)
     {
         entries.Clear();
