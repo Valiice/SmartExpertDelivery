@@ -7,11 +7,17 @@ using SmartExpertDelivery.Core;
 
 namespace SmartExpertDelivery.Delivery;
 
+internal readonly record struct CarriedItem(uint ItemId, bool Hq, bool Melded, bool Spiritbonded)
+{
+    public uint RawId => ItemUtil.GetRawId(this.ItemId, this.Hq ? ItemKind.Hq : ItemKind.Normal);
+}
+
 internal static unsafe class PlayerGear
 {
     private const uint PrioritySealAllowanceStatus = 1078;
     private const uint FreeCompanySealBuffStatus = 414;
     private const float PrioritySealAllowanceMultiplier = 1.15f;
+    private const ushort FullSpiritbond = 10000;
 
     private static readonly InventoryType[] Containers =
     [
@@ -55,15 +61,22 @@ internal static unsafe class PlayerGear
     public static JobLevel[] JobLevels(ClassJob[] jobs) =>
         Array.ConvertAll(jobs, j => new JobLevel(Services.PlayerState.GetClassJobLevel(j), j.StartingLevel));
 
-    public static List<uint> CarriedItemIds() => ItemIds(Containers, meldedOnly: false);
+    public static List<CarriedItem> Carried() => Items(Containers);
 
-    public static List<uint> OwnedItemIds() => ItemIds([.. Containers, InventoryType.EquippedItems], meldedOnly: false);
+    public static List<CarriedItem> Owned() => Items([.. Containers, InventoryType.EquippedItems]);
 
-    public static HashSet<uint> MeldedItemIds() => [.. ItemIds(Containers, meldedOnly: true)];
-
-    private static List<uint> ItemIds(InventoryType[] types, bool meldedOnly)
+    public static CarriedItem? ItemAt(InventoryType type, int index, uint expectedItemId)
     {
-        var ids = new List<uint>();
+        var container = InventoryManager.Instance()->GetInventoryContainer(type);
+        if (container == null || index >= container->GetSize())
+            return null;
+        var slot = container->GetInventorySlot(index);
+        return slot->ItemId == expectedItemId ? Describe(slot) : null;
+    }
+
+    private static List<CarriedItem> Items(InventoryType[] types)
+    {
+        var items = new List<CarriedItem>();
         var inventory = InventoryManager.Instance();
         foreach (var type in types)
         {
@@ -73,29 +86,36 @@ internal static unsafe class PlayerGear
             for (var i = 0; i < container->GetSize(); i++)
             {
                 var slot = container->GetInventorySlot(i);
-                if (slot->ItemId != 0 && (!meldedOnly || slot->GetMateriaCount() > 0))
-                    ids.Add(slot->ItemId);
+                if (slot->ItemId != 0)
+                    items.Add(Describe(slot));
             }
         }
 
-        return ids;
+        return items;
     }
 
-    public static HashSet<uint> GearsetItemIds()
+    private static CarriedItem Describe(InventoryItem* slot) => new(slot->ItemId, slot->IsHighQuality(), slot->GetMateriaCount() > 0, slot->GetSpiritbondOrCollectability() >= FullSpiritbond);
+
+    public static Dictionary<uint, int> MostCopiesWornByAnyGearset()
     {
-        var ids = new HashSet<uint>();
+        var needs = new Dictionary<uint, int>();
+        var worn = new Dictionary<uint, int>();
         var module = RaptureGearsetModule.Instance();
         for (var i = 0; i < module->Entries.Length; i++)
         {
             if (!module->IsValidGearset(i))
                 continue;
+            worn.Clear();
             foreach (ref var item in module->Entries[i].Items)
             {
                 if (item.ItemId != 0)
-                    ids.Add(ItemUtil.GetBaseId(item.ItemId).ItemId);
+                    worn[item.ItemId] = worn.GetValueOrDefault(item.ItemId) + 1;
             }
+
+            foreach (var (id, count) in worn)
+                needs[id] = Math.Max(needs.GetValueOrDefault(id), count);
         }
 
-        return ids;
+        return needs;
     }
 }

@@ -6,24 +6,16 @@ using SmartExpertDelivery.Delivery;
 
 namespace SmartExpertDelivery.Windows;
 
-internal sealed class MainWindow : Window
+internal sealed class MainWindow(Configuration config, DeliveryRunner runner)
+    : Window("Smart Expert Delivery###SmartExpertDeliveryMain", ImGuiWindowFlags.AlwaysAutoResize)
 {
     private const int MaxListLines = 15;
+    private const int ListTitleLines = 2;
     private const float ListWidth = 450;
-
-    private readonly Configuration config;
-    private readonly DeliveryRunner runner;
-
-    public MainWindow(Configuration config, DeliveryRunner runner)
-        : base("Smart Expert Delivery###SmartExpertDeliveryMain", ImGuiWindowFlags.AlwaysAutoResize)
-    {
-        this.config = config;
-        this.runner = runner;
-    }
 
     public override void Draw()
     {
-        var keep = this.config.Keep;
+        var keep = config.Keep;
         ImGui.TextUnformatted("Open Expert Delivery at your Grand Company and press Deliver.");
         ImGui.TextUnformatted("Gear matching a rule below stays in your inventory.");
         ImGui.Separator();
@@ -35,27 +27,28 @@ internal sealed class MainWindow : Window
         ImGui.Unindent();
         this.Toggle("Keep gear for jobs I have not unlocked", keep.LockedJobs, v => keep.LockedJobs = v, "Counted from the job's starting level. A locked Blue Mage keeps all caster gear.");
         this.Toggle("Keep tomestone gear", keep.TomeGear, v => keep.TomeGear = v, "Includes the augmented versions.");
-        this.Toggle("Keep gear with materia", keep.Materia, v => keep.Materia = v, "If one copy of an item has materia, every copy of it is kept.");
-        this.Toggle("Keep gear that is part of a gear set", keep.Gearsets, v => keep.Gearsets = v, null);
+        this.Toggle("Keep gear with materia", keep.Materia, v => keep.Materia = v, "Checked per item: an unmelded copy of the same item is still delivered.");
+        this.Toggle("Keep fully spiritbonded gear", keep.Spiritbond, v => keep.Spiritbond = v, "Gear at 100% spiritbond, so you can extract its materia first.");
+        this.Toggle("Keep gear that is part of a gear set", keep.Gearsets, v => keep.Gearsets = v, "High quality and normal quality count as different items. Spare identical copies are delivered.");
 
         ImGui.Separator();
-        this.Toggle("Show the Deliver button on the right", this.config.OverlayOnRight, v => this.config.OverlayOnRight = v, "Moves it to the right corner of the Expert Delivery window, out of the way of other plugins' buttons.");
+        this.Toggle("Show the Deliver button on the right", config.OverlayOnRight, v => config.OverlayOnRight = v, "Moves it to the right corner of the Expert Delivery window, out of the way of other plugins' buttons.");
 
         ImGui.Separator();
-        if (!this.runner.Live)
+        if (!runner.Live)
             ImGui.TextUnformatted("Estimated from your inventory and armoury chest. The Expert Delivery window has the exact list.");
 
-        if (this.runner.Deliverable.Count + this.runner.Kept.Count == 0)
+        if (runner.ItemCount == 0)
         {
             ImGui.TextUnformatted("No gear for expert delivery found.");
             return;
         }
 
-        var lines = Math.Min(this.runner.Deliverable.Count + this.runner.Kept.Count + 2, MaxListLines);
+        var lines = Math.Min(runner.ItemCount + ListTitleLines, MaxListLines);
         if (ImGui.BeginChild("items", new Vector2(ListWidth * ImGuiHelpers.GlobalScale, lines * ImGui.GetTextLineHeightWithSpacing())))
         {
-            ItemList("Will be delivered", this.runner.Deliverable, i => $"{i.Name}: {i.Entry.Seals} seals");
-            ItemList("Kept", this.runner.Kept, i => $"{i.Name}: {DeliveryOverlay.Describe(i.Reason)}");
+            ItemList("Will be delivered", runner.Deliverable, ItemText.Delivered);
+            ItemList("Kept", runner.Kept, ItemText.Kept);
         }
 
         ImGui.EndChild();
@@ -73,7 +66,7 @@ internal sealed class MainWindow : Window
         if (ImGui.Checkbox(label, ref value))
         {
             set(value);
-            this.config.Save();
+            config.Save();
         }
 
         if (tooltip != null && ImGui.IsItemHovered())

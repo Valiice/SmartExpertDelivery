@@ -5,7 +5,12 @@ namespace SmartExpertDelivery.Tests;
 
 public class KeepRulesTests
 {
-    private static readonly KeepOptions Off = new() { LowerJobs = false, Materia = false, Gearsets = false };
+    private const uint NormalId = 5;
+    private const uint HqId = 1_000_005;
+
+    private static readonly Dictionary<uint, int> OneHqCopy = new() { [HqId] = 1 };
+
+    private static readonly KeepOptions Off = new() { LowerJobs = false, Materia = false, Spiritbond = false, Gearsets = false };
 
     private static Gear Make(int equipLevel, params JobLevel[] jobs) => new(equipLevel, jobs, false, false, false);
 
@@ -51,6 +56,26 @@ public class KeepRulesTests
         Assert.Equal(expected, KeepRules.Check(new Gear(100, jobs, false, false, false, Outclassed: true), new KeepOptions { BestOnly = bestOnly }));
         Assert.Equal(KeepReason.Gearset, KeepRules.Check(new Gear(100, jobs, false, false, true, Outclassed: true), new KeepOptions()));
     }
+
+    [Fact]
+    public void SpiritbondedGearIsKeptUntilTheOptionIsOff()
+    {
+        var gear = new Gear(50, [new JobLevel(100, 1)], false, false, false, Spiritbonded: true);
+        Assert.Equal(KeepReason.Spiritbond, KeepRules.Check(gear, new KeepOptions()));
+        Assert.Equal(KeepReason.None, KeepRules.Check(gear, new KeepOptions { Spiritbond = false }));
+    }
+
+    [Fact]
+    public void GearsetKeepsOneMatchingQualityCopyAndNoneOfTheOtherQuality() =>
+        Assert.Equal([1], KeepRules.ListedCopiesGearsetsNeed(OneHqCopy, [NormalId, HqId, HqId], [NormalId, HqId, HqId]));
+
+    [Fact]
+    public void GearsetKeepsNoListedCopyWhenAnEquippedOneCoversIt() =>
+        Assert.Empty(KeepRules.ListedCopiesGearsetsNeed(OneHqCopy, [HqId, HqId], [HqId]));
+
+    [Fact]
+    public void GearsetWearingTwoOfARingKeepsBothCopies() =>
+        Assert.Equal([0, 1], KeepRules.ListedCopiesGearsetsNeed(new Dictionary<uint, int> { [NormalId] = 2 }, [NormalId, NormalId, NormalId], [NormalId, NormalId, NormalId]));
 
     [Fact]
     public void NothingIsKeptWithEveryOptionOff() =>

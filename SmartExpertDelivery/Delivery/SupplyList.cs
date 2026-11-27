@@ -1,13 +1,14 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
 using Dalamud.Utility;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.Sheets;
 
 namespace SmartExpertDelivery.Delivery;
 
-internal readonly record struct SupplyEntry(int Index, uint ItemId, uint Seals);
+internal readonly record struct SupplyEntry(int Index, CarriedItem Item, uint Seals);
 
 internal static unsafe class SupplyList
 {
@@ -27,6 +28,8 @@ internal static unsafe class SupplyList
         var sheet = Services.DataManager.GetExcelSheet<Addon>();
         return Array.ConvertAll(HandInPromptRows, row => WithoutWhitespace(sheet.GetRow(row).Text.ExtractText()));
     });
+
+    private static bool warnedAboutUnlocatedEntry;
 
     public static bool IsOpen => Find(ListAddon) != null;
 
@@ -55,9 +58,7 @@ internal static unsafe class SupplyList
         if (addon == null || !addon->IsVisible || addon->AtkValuesCount <= ItemCountValue || addon->AtkValues[LoadStateValue].UInt != LoadedState)
             return false;
 
-        // The entry layout only holds on the expert tab; on the others a handin would give away supply mission items.
-        var list = (AddonGrandCompanySupplyList*)addon;
-        if (list->SelectedTab != ExpertTab || list->ExpertDeliveryList == null || !list->ExpertDeliveryList->OwnerNode->IsVisible())
+        if (!ShowsExpertDeliveries((AddonGrandCompanySupplyList*)addon))
             return false;
 
         var raw = *(RawEntry**)((nint)addon + EntriesOffset);
@@ -66,9 +67,24 @@ internal static unsafe class SupplyList
 
         var count = (int)addon->AtkValues[ItemCountValue].UInt;
         for (var i = 0; i < count; i++)
-            entries.Add(new SupplyEntry(i, ItemUtil.GetBaseId(raw[i].ItemId).ItemId, raw[i].Seals));
+        {
+            var id = ItemUtil.GetBaseId(raw[i].ItemId).ItemId;
+            if (PlayerGear.ItemAt(raw[i].Inventory, raw[i].Slot, id) is { } item)
+            {
+                entries.Add(new SupplyEntry(i, item, raw[i].Seals));
+                continue;
+            }
+
+            if (!warnedAboutUnlocatedEntry)
+                Services.Log.Warning($"Supply entry {i} (item {id}) is not at {raw[i].Inventory} slot {raw[i].Slot}; entries that cannot be located are never handed in.");
+            warnedAboutUnlocatedEntry = true;
+        }
+
         return true;
     }
+
+    private static bool ShowsExpertDeliveries(AddonGrandCompanySupplyList* list) =>
+        list->SelectedTab == ExpertTab && list->ExpertDeliveryList != null && list->ExpertDeliveryList->OwnerNode->IsVisible();
 
     public static void HandIn(int index)
     {
@@ -120,7 +136,9 @@ internal static unsafe class SupplyList
     [StructLayout(LayoutKind.Explicit, Size = 152)]
     private struct RawEntry
     {
+        [FieldOffset(104)] public InventoryType Inventory;
         [FieldOffset(120)] public uint Seals;
         [FieldOffset(132)] public uint ItemId;
+        [FieldOffset(151)] public byte Slot;
     }
 }

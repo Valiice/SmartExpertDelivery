@@ -24,7 +24,6 @@ public sealed class Plugin : IDalamudPlugin
         this.windowSystem.AddWindow(this.mainWindow);
         this.windowSystem.AddWindow(new DeliveryOverlay(config, this.runner, this.OpenMain));
 
-        // Dalamud never calls Dispose on a plugin whose ctor threw, so tear down ourselves.
         try
         {
             pluginInterface.UiBuilder.Draw += this.windowSystem.Draw;

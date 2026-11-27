@@ -1,7 +1,6 @@
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
-using SmartExpertDelivery.Core;
 using SmartExpertDelivery.Delivery;
 
 namespace SmartExpertDelivery.Windows;
@@ -50,11 +49,11 @@ internal sealed class DeliveryOverlay : Window
             ImGui.EndDisabled();
         }
 
-        ListTooltip(deliverable, i => $"{i.Name}: {i.Entry.Seals} seals");
+        ListTooltip(deliverable, ItemText.Delivered);
 
         ImGui.SameLine();
         ImGui.TextUnformatted($"{this.runner.Kept.Count} kept");
-        ListTooltip(this.runner.Kept, i => $"{i.Name}: {Describe(i.Reason)}");
+        ListTooltip(this.runner.Kept, ItemText.Kept);
 
         ImGui.SameLine();
         if (ImGui.Button("Settings"))
@@ -71,14 +70,4 @@ internal sealed class DeliveryOverlay : Window
         if (items.Count > 0 && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             ImGui.SetTooltip(string.Join('\n', items.Select(line)));
     }
-
-    internal static string Describe(KeepReason reason) => reason switch
-    {
-        KeepReason.Gearset => "in a gear set",
-        KeepReason.Materia => "has materia",
-        KeepReason.Tome => "tomestone gear",
-        KeepReason.LowerJob => "a lower job can use it",
-        KeepReason.LockedJob => "a locked job can use it",
-        _ => string.Empty,
-    };
 }

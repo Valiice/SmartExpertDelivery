@@ -3,7 +3,7 @@ using Lumina.Excel.Sheets;
 
 namespace SmartExpertDelivery.Delivery;
 
-internal sealed record GearEntry(string Name, int EquipLevel, uint ItemLevel, uint Slot, int[] JobIndexes, bool IsTome, uint Seals)
+internal sealed record GearEntry(string Name, int EquipLevel, uint ItemLevel, uint Slot, int[] JobIndexes, bool IsTome, bool Meldable, uint Seals)
 {
     private const uint RingSlot = 12;
 
@@ -13,12 +13,13 @@ internal sealed record GearEntry(string Name, int EquipLevel, uint ItemLevel, ui
         other.Slot == this.Slot
         && other.EquipLevel == this.EquipLevel
         && other.ItemLevel > this.ItemLevel
-        && !this.JobIndexes.Except(other.JobIndexes).Any();
+        && Array.TrueForAll(this.JobIndexes, job => Array.IndexOf(other.JobIndexes, job) >= 0);
 }
 
 internal sealed class GearCatalog
 {
     private const byte TomestoneCurrencyType = 16;
+    private const int CategoryColumnsBeforeJobs = 1;
     private static readonly byte[] DeliverableRarities = [2, 3, 7];
 
     private readonly Dictionary<uint, GearEntry?> cache = [];
@@ -41,14 +42,13 @@ internal sealed class GearCatalog
         if (!this.items.TryGetRow(itemId, out var item))
             return null;
 
-        // ClassJobCategory has one bool column per ClassJob row, after the name column
         var category = this.categories.GetRow(item.ClassJobCategory.RowId);
         var wearers = Enumerable.Range(0, this.Jobs.Length)
-            .Where(i => category.ReadBoolColumn((int)this.Jobs[i].RowId + 1))
+            .Where(i => category.ReadBoolColumn((int)this.Jobs[i].RowId + CategoryColumnsBeforeJobs))
             .ToArray();
         var deliverable = item.EquipSlotCategory.RowId != 0 && item.Desynth != 0 && DeliverableRarities.Contains(item.Rarity);
         var seals = deliverable && this.rewards.TryGetRow(item.LevelItem.RowId, out var reward) ? reward.SealsExpertDelivery : 0;
-        return new GearEntry(item.Name.ExtractText(), item.LevelEquip, item.LevelItem.RowId, item.EquipSlotCategory.RowId, wearers, this.tomeGear.Value.Contains(itemId), seals);
+        return new GearEntry(item.Name.ExtractText(), item.LevelEquip, item.LevelItem.RowId, item.EquipSlotCategory.RowId, wearers, this.tomeGear.Value.Contains(itemId), item.MateriaSlotCount > 0, seals);
     }
 
     private static HashSet<uint> FindTomeGear()

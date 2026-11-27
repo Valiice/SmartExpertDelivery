@@ -39,8 +39,9 @@ Each rule can be turned on or off in `/sed`.
 | Only the best piece per slot | On | Delivers a piece the job rules would keep when you own a better item level piece for the same slot and equip level that the same jobs can wear. |
 | Jobs I have not unlocked | Off | Gear for locked jobs, counted from the job's starting level. |
 | Tomestone gear | Off | Gear bought with tomestones, and its augmented versions. |
-| Gear with materia | On | Gear with materia melded. If one copy has materia, every copy of that item is kept. |
-| Gear set pieces | On | Gear saved in any of your gear sets. |
+| Gear with materia | On | Gear with materia melded. Checked per item, so an unmelded copy of the same item is still delivered. |
+| Fully spiritbonded gear | On | Gear at 100% spiritbond, so you can extract its materia first. |
+| Gear set pieces | On | Gear saved in any of your gear sets. High quality and normal quality count as different items, and spare identical copies are delivered. |
 
 ## Limitations
 
