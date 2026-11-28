@@ -136,9 +136,10 @@ internal static unsafe class SupplyList
     [StructLayout(LayoutKind.Explicit, Size = 152)]
     private struct RawEntry
     {
-        [FieldOffset(104)] public InventoryType Inventory;
+        // Not the agent's GrandCompanyItem layout: the addon's copy keeps the container and slot here.
         [FieldOffset(120)] public uint Seals;
         [FieldOffset(132)] public uint ItemId;
-        [FieldOffset(151)] public byte Slot;
+        [FieldOffset(140)] public InventoryType Inventory;
+        [FieldOffset(144)] public short Slot;
     }
 }
