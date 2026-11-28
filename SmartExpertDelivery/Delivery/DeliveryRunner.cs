@@ -3,7 +3,7 @@ using SmartExpertDelivery.Core;
 
 namespace SmartExpertDelivery.Delivery;
 
-internal sealed record DeliveryItem(SupplyEntry Entry, string Name, KeepReason Reason);
+internal sealed record DeliveryItem(SupplyEntry Entry, string Name, uint Icon, KeepReason Reason);
 
 internal sealed class DeliveryRunner(Configuration config, GearCatalog catalog)
 {
@@ -33,6 +33,9 @@ internal sealed class DeliveryRunner(Configuration config, GearCatalog catalog)
 
     public int ItemCount => this.deliverable.Count + this.kept.Count;
 
+    // Includes the seal buffs active right now; the game may round a seal or two differently.
+    public long SealTotal => this.deliverable.Sum(i => (long)(i.Entry.Seals * PlayerGear.SealMultiplier));
+
     public bool ShowOverlay => this.Running || (this.Live && (this.Status.Length > 0 || this.ItemCount > 0));
 
     public void Start()
@@ -40,10 +43,15 @@ internal sealed class DeliveryRunner(Configuration config, GearCatalog catalog)
         this.Running = true;
         this.Status = string.Empty;
         this.attempts = 0;
+        Trace.Event($"start: {this.deliverable.Count} to deliver for {this.SealTotal} seals, {this.kept.Count} kept, room for {PlayerGear.SealRoom}, multiplier {PlayerGear.SealMultiplier}");
+        foreach (var item in this.kept)
+            Trace.Event($"  kept [{item.Entry.Index}] {item.Name}: {item.Reason}");
     }
 
     public void Stop(string status)
     {
+        if (this.Running)
+            Trace.Event($"stop: \"{status}\", {this.deliverable.Count} still deliverable, room for {PlayerGear.SealRoom}");
         this.Running = false;
         this.Status = status;
     }
@@ -128,7 +136,7 @@ internal sealed class DeliveryRunner(Configuration config, GearCatalog catalog)
                     ownedGear.Count(gear.OutclassedBy) >= gear.Wearable,
                     entry.Item.Spiritbonded),
                 config.Keep);
-            (reason == KeepReason.None ? this.deliverable : this.kept).Add(new DeliveryItem(entry, gear.Name, reason));
+            (reason == KeepReason.None ? this.deliverable : this.kept).Add(new DeliveryItem(entry, gear.Name, gear.Icon, reason));
         }
     }
 
@@ -163,6 +171,7 @@ internal sealed class DeliveryRunner(Configuration config, GearCatalog catalog)
             return;
         }
 
+        Trace.Event($"hand in [{next.Entry.Index}] {next.Name} ({next.Entry.Item.Container} slot {next.Entry.Item.Slot}) for {next.Entry.Seals}, attempt {this.attempts + 1}, {this.entries.Count} listed, room for {room}");
         SupplyList.HandIn(next.Entry.Index);
     }
 }

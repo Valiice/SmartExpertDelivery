@@ -5,9 +5,13 @@ namespace SmartExpertDelivery.Windows;
 
 internal static class ItemText
 {
-    public static string Delivered(DeliveryItem item) => $"{item.Name}: {item.Entry.Seals} seals";
+    public static string Delivered(DeliveryItem item) => $"{item.Name}: {Seals(item)}";
 
-    public static string Kept(DeliveryItem item) => $"{item.Name}: {Describe(item.Reason)}";
+    public static string Kept(DeliveryItem item) => $"{item.Name}: {Reason(item)}";
+
+    public static string Seals(DeliveryItem item) => $"{item.Entry.Seals} seals";
+
+    public static string Reason(DeliveryItem item) => Describe(item.Reason);
 
     private static string Describe(KeepReason reason) => reason switch
     {

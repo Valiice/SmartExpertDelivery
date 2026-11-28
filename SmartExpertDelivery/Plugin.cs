@@ -14,6 +14,8 @@ public sealed class Plugin : IDalamudPlugin
     private readonly WindowSystem windowSystem = new("SmartExpertDelivery");
     private readonly MainWindow mainWindow;
     private readonly DeliveryRunner runner;
+    private bool wasLive;
+    private bool openedByList;
 
     public Plugin(IDalamudPluginInterface pluginInterface)
     {
@@ -22,7 +24,7 @@ public sealed class Plugin : IDalamudPlugin
         this.runner = new DeliveryRunner(config, new GearCatalog());
         this.mainWindow = new MainWindow(config, this.runner);
         this.windowSystem.AddWindow(this.mainWindow);
-        this.windowSystem.AddWindow(new DeliveryOverlay(config, this.runner, this.OpenMain));
+        this.windowSystem.AddWindow(new DeliveryOverlay(config, this.runner));
 
         try
         {
@@ -60,5 +62,15 @@ public sealed class Plugin : IDalamudPlugin
     {
         this.runner.PreviewInventory = this.mainWindow.IsOpen;
         this.runner.Update();
+
+        // The window comes and goes with the Expert Delivery list, unless the player opened it themselves.
+        if (this.runner.Live != this.wasLive)
+        {
+            if (this.runner.Live && !this.mainWindow.IsOpen)
+                this.mainWindow.IsOpen = this.openedByList = true;
+            else if (!this.runner.Live && this.openedByList)
+                this.mainWindow.IsOpen = this.openedByList = false;
+            this.wasLive = this.runner.Live;
+        }
     }
 }

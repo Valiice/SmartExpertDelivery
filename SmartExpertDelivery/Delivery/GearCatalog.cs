@@ -3,7 +3,7 @@ using Lumina.Excel.Sheets;
 
 namespace SmartExpertDelivery.Delivery;
 
-internal sealed record GearEntry(string Name, int EquipLevel, uint ItemLevel, uint Slot, int[] JobIndexes, bool IsTome, bool Meldable, uint Seals)
+internal sealed record GearEntry(string Name, uint Icon, int EquipLevel, uint ItemLevel, uint Slot, int[] JobIndexes, bool IsTome, bool Meldable, uint Seals)
 {
     private const uint RingSlot = 12;
 
@@ -48,7 +48,7 @@ internal sealed class GearCatalog
             .ToArray();
         var deliverable = item.EquipSlotCategory.RowId != 0 && item.Desynth != 0 && DeliverableRarities.Contains(item.Rarity);
         var seals = deliverable && this.rewards.TryGetRow(item.LevelItem.RowId, out var reward) ? reward.SealsExpertDelivery : 0;
-        return new GearEntry(item.Name.ExtractText(), item.LevelEquip, item.LevelItem.RowId, item.EquipSlotCategory.RowId, wearers, this.tomeGear.Value.Contains(itemId), item.MateriaSlotCount > 0, seals);
+        return new GearEntry(item.Name.ExtractText(), item.Icon, item.LevelEquip, item.LevelItem.RowId, item.EquipSlotCategory.RowId, wearers, this.tomeGear.Value.Contains(itemId), item.MateriaSlotCount > 0, seals);
     }
 
     private static HashSet<uint> FindTomeGear()

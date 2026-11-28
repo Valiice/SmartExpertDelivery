@@ -7,7 +7,7 @@ using SmartExpertDelivery.Core;
 
 namespace SmartExpertDelivery.Delivery;
 
-internal readonly record struct CarriedItem(uint ItemId, bool Hq, bool Melded, bool Spiritbonded)
+internal readonly record struct CarriedItem(InventoryType Container, short Slot, uint ItemId, bool Hq, bool Melded, bool Spiritbonded)
 {
     public uint RawId => ItemUtil.GetRawId(this.ItemId, this.Hq ? ItemKind.Hq : ItemKind.Normal);
 }
@@ -94,7 +94,7 @@ internal static unsafe class PlayerGear
         return items;
     }
 
-    private static CarriedItem Describe(InventoryItem* slot) => new(slot->ItemId, slot->IsHighQuality(), slot->GetMateriaCount() > 0, slot->GetSpiritbondOrCollectability() >= FullSpiritbond);
+    private static CarriedItem Describe(InventoryItem* slot) => new(slot->Container, slot->Slot, slot->ItemId, slot->IsHighQuality(), slot->GetMateriaCount() > 0, slot->GetSpiritbondOrCollectability() >= FullSpiritbond);
 
     public static Dictionary<uint, int> MostCopiesWornByAnyGearset()
     {

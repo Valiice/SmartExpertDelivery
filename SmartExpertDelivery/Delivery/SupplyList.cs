@@ -76,7 +76,7 @@ internal static unsafe class SupplyList
             }
 
             if (!warnedAboutUnlocatedEntry)
-                Services.Log.Warning($"Supply entry {i} (item {id}) is not at {raw[i].Inventory} slot {raw[i].Slot}; entries that cannot be located are never handed in.");
+                Trace.Event($"supply entry {i} of {count} (item {id}) is not at {raw[i].Inventory} slot {raw[i].Slot}; entries that cannot be located are never handed in");
             warnedAboutUnlocatedEntry = true;
         }
 

@@ -9,17 +9,15 @@ internal sealed class DeliveryOverlay : Window
 {
     private readonly Configuration config;
     private readonly DeliveryRunner runner;
-    private readonly Action openSettings;
     private Vector2 size;
 
-    public DeliveryOverlay(Configuration config, DeliveryRunner runner, Action openSettings)
+    public DeliveryOverlay(Configuration config, DeliveryRunner runner)
         : base(
             "SmartExpertDelivery###SmartExpertDeliveryOverlay",
             ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoFocusOnAppearing)
     {
         this.config = config;
         this.runner = runner;
-        this.openSettings = openSettings;
         this.IsOpen = true;
         this.RespectCloseHotkey = false;
         this.PositionCondition = ImGuiCond.Always;
@@ -31,7 +29,10 @@ internal sealed class DeliveryOverlay : Window
     {
         if (SupplyList.IsOpen)
             this.Position = SupplyList.Position + new Vector2(this.config.OverlayOnRight ? SupplyList.Width - this.size.X : 0, -this.size.Y);
+        Theme.PushWindow();
     }
+
+    public override void PostDraw() => Theme.PopWindow();
 
     public override void Draw()
     {
@@ -44,7 +45,7 @@ internal sealed class DeliveryOverlay : Window
         else
         {
             ImGui.BeginDisabled(deliverable.Count == 0);
-            if (ImGui.Button($"Deliver {deliverable.Count} items"))
+            if (ImGui.Button(deliverable.Count == 0 ? "Nothing to deliver" : $"Deliver {deliverable.Count} items ({this.runner.SealTotal:N0} seals)"))
                 this.runner.Start();
             ImGui.EndDisabled();
         }
@@ -52,15 +53,14 @@ internal sealed class DeliveryOverlay : Window
         ListTooltip(deliverable, ItemText.Delivered);
 
         ImGui.SameLine();
-        ImGui.TextUnformatted($"{this.runner.Kept.Count} kept");
+        ImGui.TextColored(Theme.Muted, $"{this.runner.Kept.Count} kept");
         ListTooltip(this.runner.Kept, ItemText.Kept);
 
-        ImGui.SameLine();
-        if (ImGui.Button("Settings"))
-            this.openSettings();
-
         if (this.runner.Status.Length > 0)
-            ImGui.TextUnformatted(this.runner.Status);
+        {
+            ImGui.SameLine();
+            ImGui.TextColored(Theme.Amber, this.runner.Status);
+        }
 
         this.size = ImGui.GetWindowSize();
     }
