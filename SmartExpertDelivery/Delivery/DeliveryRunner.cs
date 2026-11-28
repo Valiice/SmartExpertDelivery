@@ -36,7 +36,7 @@ internal sealed class DeliveryRunner(Configuration config, GearCatalog catalog)
     // Includes the seal buffs active right now; the game may round a seal or two differently.
     public long SealTotal => this.deliverable.Sum(i => (long)(i.Entry.Seals * PlayerGear.SealMultiplier));
 
-    public bool ShowOverlay => this.Running || (this.Live && (this.Status.Length > 0 || this.ItemCount > 0));
+    public bool ShowOverlay => this.Running || this.Live;
 
     public void Start()
     {
